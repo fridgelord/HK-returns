@@ -1,5 +1,6 @@
 import pandas as pd
 import sys
+import os
 
 
 def sales_df(path):
@@ -69,6 +70,7 @@ def parse_returns_df(return_df):
             return_df[column_name] = ''
     return_df['qt'].fillna('0', inplace=True)
     return_df['qt'] = return_df['qt'].astype(int)
+    return_df['currentReturn'] = 0
     return return_df
 
 
@@ -84,28 +86,30 @@ def create_returns_df(sales_df, return_df, client):
                     a = min(row['qt'], b)
                     sales_df.loc[sales_df.index[ind], 'currentReturn'] += a
                     row['qt'] -= a
-                    return_df.loc[return_df.index[index], 'qt'] -= a
+                    return_df.loc[return_df.index[index], 'currentReturn'] += a
                     if row['qt'] == 0:
                         break
-            else:
-                if initial == row['qt']:
-                    return_df.loc[return_df.index[index], 'comments'] = "didn't buy this code"
-                else:
-                    return_df.loc[return_df.index[index], 'comments'] = f"{(initial - row['qt'])} can be returned, {row['qt']} left"
-                print('insufficient bought', client, row['material'], row['qt'], 'pc(s) left')
 
     sales_df['rozmiar_bieznik'] = sales_df['Dimension'] + ' ' + sales_df['Pattern']
     sales_df = sales_df.query('currentReturn != 0')
-    return sales_df
+    return_df['salesNotFound'] = return_df['qt'] - return_df['currentReturn']
+    return sales_df, return_df
 
 
 def main(sales_input_path, returns_input_path, client, is_client_soldToCur):
+    RETURN_OUTPUT = "/tmp/doZwrotu.xlsx"
+    PARSED_OUTPUT = "/tmp/pozostało.xlsx"
     sales = sales_df(sales_input_path)
     sales = parse_sales_df(sales, client, is_client_soldToCur)
     returns_input = returns_df(returns_input_path)
     returns_input = parse_returns_df(returns_input)
-    returns = create_returns_df(sales, returns_input, client)
-    returns.to_excel("./zwrot.xlsx", index=False)
+    to_be_returned, parsed_returns = create_returns_df(sales, returns_input, client)
+    if os.path.exists(RETURN_OUTPUT):
+        os.remove(RETURN_OUTPUT)
+    if os.path.exists(PARSED_OUTPUT):
+        os.remove(PARSED_OUTPUT)
+    to_be_returned.to_excel(RETURN_OUTPUT, index=False)
+    parsed_returns.to_excel(PARSED_OUTPUT, index=False)
 
 if __name__ == "__main__":
     main(
