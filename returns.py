@@ -96,25 +96,27 @@ def create_returns_df(sales_df, return_df, client):
     return sales_df, return_df
 
 
-def main(sales_input_path, returns_input_path, client, is_client_soldToCur):
-    RETURN_OUTPUT = "/tmp/doZwrotu.xlsx"
-    PARSED_OUTPUT = "/tmp/pozostało.xlsx"
+def main(sales_input_path, returns_input_path, client, is_client_soldToCur, return_output, parsed_output):
     sales = sales_df(sales_input_path)
     sales = parse_sales_df(sales, client, is_client_soldToCur)
     returns_input = returns_df(returns_input_path)
     returns_input = parse_returns_df(returns_input)
     to_be_returned, parsed_returns = create_returns_df(sales, returns_input, client)
-    if os.path.exists(RETURN_OUTPUT):
-        os.remove(RETURN_OUTPUT)
-    if os.path.exists(PARSED_OUTPUT):
-        os.remove(PARSED_OUTPUT)
-    to_be_returned.to_excel(RETURN_OUTPUT, index=False)
-    parsed_returns.to_excel(PARSED_OUTPUT, index=False)
+    if os.path.exists(return_output):
+        os.remove(return_output)
+    if os.path.exists(parsed_output):
+        os.remove(parsed_output)
+    to_be_returned.to_excel(return_output, index=False)
+    parsed_returns.to_excel(parsed_output, index=False)
 
 if __name__ == "__main__":
+    RETURN_OUTPUT = "/tmp/doZwrotu.xlsx"
+    PARSED_OUTPUT = "/tmp/pozostalo.xlsx"
     main(
         "./sprzedaz.xlsx",
         "./923853.csv",
         "923853",
-        True
+        True,
+        RETURN_OUTPUT,
+        PARSED_OUTPUT
     )
